@@ -1,0 +1,23 @@
+{
+  "agent_id": "demo-agent-jupiter-block",
+  "chain": "solana",
+  "current_slot": 299284000,
+  "max_slippage_bps": 50,
+  "max_price_impact_pct": 0.5,
+  "max_time_taken": 0.5,
+  "max_slot_lag": 150,
+  "quote": {
+    "inputMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "100000000",
+    "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "0",
+    "otherAmountThreshold": "0",
+    "swapMode": "ExactIn",
+    "slippageBps": 250,
+    "platformFee": null,
+    "priceImpactPct": "2.75",
+    "routePlan": [],
+    "contextSlot": 299283000,
+    "timeTaken": 0.91
+  }
+}

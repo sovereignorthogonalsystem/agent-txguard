@@ -1,0 +1,35 @@
+{
+  "agent_id": "demo-agent-jupiter-pass",
+  "chain": "solana",
+  "current_slot": 299283800,
+  "max_slippage_bps": 50,
+  "max_price_impact_pct": 0.5,
+  "max_time_taken": 0.5,
+  "max_slot_lag": 150,
+  "quote": {
+    "inputMint": "So11111111111111111111111111111111111111112",
+    "inAmount": "100000000",
+    "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "outAmount": "16198753",
+    "otherAmountThreshold": "16117760",
+    "swapMode": "ExactIn",
+    "slippageBps": 50,
+    "platformFee": null,
+    "priceImpactPct": "0.05",
+    "routePlan": [
+      {
+        "swapInfo": {
+          "ammKey": "demo-amm-key",
+          "label": "Demo AMM",
+          "inputMint": "So11111111111111111111111111111111111111112",
+          "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+          "inAmount": "100000000",
+          "outAmount": "16198753"
+        },
+        "percent": 100
+      }
+    ],
+    "contextSlot": 299283763,
+    "timeTaken": 0.015
+  }
+}

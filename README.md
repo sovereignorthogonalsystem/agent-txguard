@@ -82,3 +82,21 @@ It accepts a base64-encoded transaction, calls Solana simulateTransaction, and e
 - suspicious simulation logs
 
 This endpoint does not broadcast transactions and never accepts private keys or seed phrases.
+
+## Jupiter Quote Verification
+
+AgentTxGuard includes a Jupiter quote preflight endpoint:
+
+- POST /verify/jupiter-quote
+
+It evaluates Jupiter quote fields including:
+
+- outAmount
+- otherAmountThreshold
+- slippageBps
+- priceImpactPct
+- routePlan
+- contextSlot freshness
+- timeTaken latency
+
+This helps autonomous agents block stale, high-impact, high-slippage, or invalid routes before building a swap transaction.

@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from rpc_simulator import simulate_transaction
 
-from guard import verify_route, verify_simulation, verify_rpc_simulation_result
+from guard import verify_route, verify_simulation, verify_rpc_simulation_result, verify_jupiter_quote
 
 
 app = FastAPI(
@@ -77,6 +77,20 @@ class SolanaRpcSimulationRequest(BaseModel):
     max_fee_lamports: int = 10000
 
 
+class JupiterQuoteVerificationRequest(BaseModel):
+    agent_id: str = Field(default="demo-agent")
+    chain: str = Field(default="solana")
+
+    quote: Dict[str, Any]
+
+    current_slot: Optional[int] = None
+
+    max_slippage_bps: int = 50
+    max_price_impact_pct: float = 0.50
+    max_time_taken: float = 0.50
+    max_slot_lag: int = 150
+
+
 @app.get("/")
 def root() -> Dict[str, str]:
     return {
@@ -87,6 +101,7 @@ def root() -> Dict[str, str]:
         "route_verification": "/verify/route",
         "simulation_verification": "/verify/simulation",
         "solana_rpc_simulation": "/verify/solana-rpc-simulation",
+        "jupiter_quote_verification": "/verify/jupiter-quote",
     }
 
 
@@ -141,4 +156,10 @@ def verify_solana_rpc_simulation_endpoint(payload: SolanaRpcSimulationRequest) -
         }
 
     result = verify_rpc_simulation_result(evaluation_payload)
+    return asdict(result)
+
+
+@app.post("/verify/jupiter-quote")
+def verify_jupiter_quote_endpoint(payload: JupiterQuoteVerificationRequest) -> Dict[str, Any]:
+    result = verify_jupiter_quote(payload.model_dump())
     return asdict(result)

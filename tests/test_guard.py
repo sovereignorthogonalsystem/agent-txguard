@@ -212,3 +212,69 @@ def test_rpc_simulation_result_blocks_simulation_error():
     assert result.decision == "BLOCK"
     assert "simulation_success" in result.failed_conditions
     assert "no_dangerous_logs" in result.failed_conditions
+
+
+from guard import verify_jupiter_quote
+
+
+def test_jupiter_quote_passes_clean_quote():
+    payload = {
+        "agent_id": "jupiter-pass",
+        "current_slot": 299283800,
+        "max_slippage_bps": 50,
+        "max_price_impact_pct": 0.5,
+        "max_time_taken": 0.5,
+        "max_slot_lag": 150,
+        "quote": {
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "inAmount": "100000000",
+            "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "outAmount": "16198753",
+            "otherAmountThreshold": "16117760",
+            "swapMode": "ExactIn",
+            "slippageBps": 50,
+            "platformFee": None,
+            "priceImpactPct": "0.05",
+            "routePlan": [{"swapInfo": {"label": "Demo AMM"}, "percent": 100}],
+            "contextSlot": 299283763,
+            "timeTaken": 0.015,
+        },
+    }
+
+    result = verify_jupiter_quote(payload)
+
+    assert result.decision == "PASS"
+    assert result.metadata["routePlanLength"] == 1
+
+
+def test_jupiter_quote_blocks_bad_quote():
+    payload = {
+        "agent_id": "jupiter-block",
+        "current_slot": 299284000,
+        "max_slippage_bps": 50,
+        "max_price_impact_pct": 0.5,
+        "max_time_taken": 0.5,
+        "max_slot_lag": 150,
+        "quote": {
+            "inputMint": "So11111111111111111111111111111111111111112",
+            "inAmount": "100000000",
+            "outputMint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "outAmount": "0",
+            "otherAmountThreshold": "0",
+            "swapMode": "ExactIn",
+            "slippageBps": 250,
+            "platformFee": None,
+            "priceImpactPct": "2.75",
+            "routePlan": [],
+            "contextSlot": 299283000,
+            "timeTaken": 0.91,
+        },
+    }
+
+    result = verify_jupiter_quote(payload)
+
+    assert result.decision == "BLOCK"
+    assert "positive_out_amount" in result.failed_conditions
+    assert "slippage_policy" in result.failed_conditions
+    assert "price_impact_policy" in result.failed_conditions
+    assert "route_plan_present" in result.failed_conditions
