@@ -1,7 +1,8 @@
 from dataclasses import asdict
 from typing import Any, Dict, Optional
+import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from rpc_simulator import simulate_transaction
@@ -14,6 +15,18 @@ app = FastAPI(
     description="Preflight verification API for autonomous Solana agents.",
     version="0.1.0",
 )
+
+
+def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
+    expected_key = os.getenv("AGENTTXGUARD_API_KEY")
+
+    # If no API key is configured, allow local/dev usage.
+    if not expected_key:
+        return
+
+    if x_api_key != expected_key:
+        raise HTTPException(status_code=401, detail="Invalid or missing API key.")
+
 
 
 class RouteVerificationRequest(BaseModel):
@@ -111,19 +124,22 @@ def health() -> Dict[str, str]:
 
 
 @app.post("/verify/route")
-def verify_route_endpoint(payload: RouteVerificationRequest) -> Dict[str, Any]:
+def verify_route_endpoint(payload: RouteVerificationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
+    require_api_key(_)
     result = verify_route(payload.model_dump())
     return asdict(result)
 
 
 @app.post("/verify/simulation")
-def verify_simulation_endpoint(payload: SimulationVerificationRequest) -> Dict[str, Any]:
+def verify_simulation_endpoint(payload: SimulationVerificationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
+    require_api_key(_)
     result = verify_simulation(payload.model_dump())
     return asdict(result)
 
 
 @app.post("/verify/solana-rpc-simulation")
-def verify_solana_rpc_simulation_endpoint(payload: SolanaRpcSimulationRequest) -> Dict[str, Any]:
+def verify_solana_rpc_simulation_endpoint(payload: SolanaRpcSimulationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
+    require_api_key(_)
     try:
         sim = simulate_transaction(
             transaction_base64=payload.transaction_base64,
@@ -160,6 +176,7 @@ def verify_solana_rpc_simulation_endpoint(payload: SolanaRpcSimulationRequest) -
 
 
 @app.post("/verify/jupiter-quote")
-def verify_jupiter_quote_endpoint(payload: JupiterQuoteVerificationRequest) -> Dict[str, Any]:
+def verify_jupiter_quote_endpoint(payload: JupiterQuoteVerificationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
+    require_api_key(_)
     result = verify_jupiter_quote(payload.model_dump())
     return asdict(result)

@@ -119,3 +119,22 @@ docker compose up --build
 ## Deploy
 
 This repo includes a `render.yaml` for simple Render deployment.
+
+## API Key Authentication
+
+For hosted deployments, set:
+
+```bash
+AGENTTXGUARD_API_KEY=your-secret-key
+```
+
+Then call protected endpoints with:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/verify/route" \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secret-key" \
+  -d @examples/proposed_swap_pass.json
+```
+
+If `AGENTTXGUARD_API_KEY` is unset, the API allows local development without a key.
