@@ -1,0 +1,16 @@
+{
+  "agent_id": "demo-agent-sim-block",
+  "chain": "solana",
+  "intent": "transaction",
+  "simulation_ok": false,
+  "simulation_error": "InstructionError: custom program error",
+  "wallet_delta_lamports": -5000,
+  "compute_units_used": 245000,
+  "max_compute_units": 200000,
+  "priority_fee_lamports": 25000,
+  "max_priority_fee_lamports": 10000,
+  "blockhash_age_slots": 180,
+  "max_blockhash_age_slots": 120,
+  "private_key_supplied": false,
+  "seed_phrase_supplied": false
+}

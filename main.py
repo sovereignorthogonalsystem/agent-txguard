@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
-from guard import verify_route
+from guard import verify_route, verify_simulation
 
 
 app = FastAPI(
@@ -37,6 +37,29 @@ class RouteVerificationRequest(BaseModel):
     seed_phrase_supplied: bool = False
 
 
+class SimulationVerificationRequest(BaseModel):
+    agent_id: str = Field(default="demo-agent")
+    chain: str = Field(default="solana")
+    intent: str = Field(default="transaction")
+
+    simulation_ok: bool = False
+    simulation_error: Optional[str] = None
+
+    wallet_delta_lamports: int = 0
+
+    compute_units_used: int = 0
+    max_compute_units: int = 200000
+
+    priority_fee_lamports: int = 0
+    max_priority_fee_lamports: int = 10000
+
+    blockhash_age_slots: int = 999999
+    max_blockhash_age_slots: int = 120
+
+    private_key_supplied: bool = False
+    seed_phrase_supplied: bool = False
+
+
 @app.get("/")
 def root() -> Dict[str, str]:
     return {
@@ -45,6 +68,7 @@ def root() -> Dict[str, str]:
         "docs": "/docs",
         "health": "/health",
         "route_verification": "/verify/route",
+        "simulation_verification": "/verify/simulation",
     }
 
 
@@ -56,4 +80,10 @@ def health() -> Dict[str, str]:
 @app.post("/verify/route")
 def verify_route_endpoint(payload: RouteVerificationRequest) -> Dict[str, Any]:
     result = verify_route(payload.model_dump())
+    return asdict(result)
+
+
+@app.post("/verify/simulation")
+def verify_simulation_endpoint(payload: SimulationVerificationRequest) -> Dict[str, Any]:
+    result = verify_simulation(payload.model_dump())
     return asdict(result)

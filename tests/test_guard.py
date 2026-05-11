@@ -91,3 +91,57 @@ def test_route_blocks_private_key_request():
     result = verify_route(payload)
     assert result.decision == "BLOCK"
     assert "non_custodial_request" in result.failed_conditions
+
+
+from guard import verify_simulation
+
+
+def test_simulation_blocks_failed_transaction():
+    payload = {
+        "agent_id": "demo-agent-sim-block",
+        "chain": "solana",
+        "intent": "transaction",
+        "simulation_ok": False,
+        "simulation_error": "InstructionError: custom program error",
+        "wallet_delta_lamports": -5000,
+        "compute_units_used": 245000,
+        "max_compute_units": 200000,
+        "priority_fee_lamports": 25000,
+        "max_priority_fee_lamports": 10000,
+        "blockhash_age_slots": 180,
+        "max_blockhash_age_slots": 120,
+        "private_key_supplied": False,
+        "seed_phrase_supplied": False,
+    }
+
+    result = verify_simulation(payload)
+
+    assert result.decision == "BLOCK"
+    assert "simulation_success" in result.failed_conditions
+    assert "positive_wallet_delta" in result.failed_conditions
+    assert "compute_unit_ceiling" in result.failed_conditions
+    assert "fresh_blockhash" in result.failed_conditions
+
+
+def test_simulation_passes_clean_transaction():
+    payload = {
+        "agent_id": "demo-agent-sim-pass",
+        "chain": "solana",
+        "intent": "transaction",
+        "simulation_ok": True,
+        "simulation_error": None,
+        "wallet_delta_lamports": 125000,
+        "compute_units_used": 142000,
+        "max_compute_units": 200000,
+        "priority_fee_lamports": 5000,
+        "max_priority_fee_lamports": 10000,
+        "blockhash_age_slots": 45,
+        "max_blockhash_age_slots": 120,
+        "private_key_supplied": False,
+        "seed_phrase_supplied": False,
+    }
+
+    result = verify_simulation(payload)
+
+    assert result.decision == "PASS"
+    assert result.metadata["wallet_delta_lamports"] == 125000

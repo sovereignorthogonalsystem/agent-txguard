@@ -46,3 +46,23 @@ pytest
 Experimental prototype. Not financial, legal, security, investment, or professional advice.
 
 Never send private keys, seed phrases, or wallet secrets to this service.
+
+## Simulation Verification
+
+AgentTxGuard also supports simulation-style transaction preflight:
+
+- simulation success/failure
+- wallet-level balance delta
+- compute unit ceiling
+- priority fee ceiling
+- blockhash freshness
+
+Endpoint:
+
+- POST /verify/simulation
+
+Example:
+
+curl -X POST "http://127.0.0.1:8000/verify/simulation" \
+  -H "Content-Type: application/json" \
+  -d @examples/simulation_block.json

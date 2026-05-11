@@ -171,3 +171,107 @@ def verify_route(payload: Dict[str, Any]) -> GuardResult:
             "liquidity_score": liquidity_score,
         },
     )
+
+
+def verify_simulation(payload: Dict[str, Any]) -> GuardResult:
+    """
+    Verify a transaction simulation result before an autonomous agent signs or broadcasts.
+
+    This MVP does not call Solana RPC directly.
+    It evaluates simulation-like fields supplied by the caller.
+
+    Checks:
+    - non-custodial safety
+    - simulation success
+    - wallet-level positive balance delta
+    - compute unit ceiling
+    - priority fee ceiling
+    - stale blockhash risk
+    """
+
+    simulation_ok = bool(payload.get("simulation_ok", False))
+    simulation_error = payload.get("simulation_error")
+
+    wallet_delta_lamports = int(payload.get("wallet_delta_lamports", 0))
+    compute_units_used = int(payload.get("compute_units_used", 0))
+    max_compute_units = int(payload.get("max_compute_units", 200000))
+
+    priority_fee_lamports = int(payload.get("priority_fee_lamports", 0))
+    max_priority_fee_lamports = int(payload.get("max_priority_fee_lamports", 10000))
+
+    blockhash_age_slots = int(payload.get("blockhash_age_slots", 999999))
+    max_blockhash_age_slots = int(payload.get("max_blockhash_age_slots", 120))
+
+    private_key_supplied = bool(payload.get("private_key_supplied", False))
+    seed_phrase_supplied = bool(payload.get("seed_phrase_supplied", False))
+
+    conditions = [
+        GuardCondition(
+            name="non_custodial_request",
+            passed=not private_key_supplied and not seed_phrase_supplied,
+            detail="Private keys or seed phrases must never be supplied to AgentTxGuard.",
+            weight=5.0,
+            severity="critical",
+        ),
+        GuardCondition(
+            name="simulation_success",
+            passed=simulation_ok and not simulation_error,
+            detail=f"Simulation failed or returned error: {simulation_error}",
+            weight=5.0,
+            severity="critical",
+        ),
+        GuardCondition(
+            name="positive_wallet_delta",
+            passed=wallet_delta_lamports > 0,
+            detail=f"Wallet delta is {wallet_delta_lamports} lamports.",
+            weight=3.0,
+            severity="critical",
+        ),
+        GuardCondition(
+            name="compute_unit_ceiling",
+            passed=compute_units_used <= max_compute_units,
+            detail=(
+                f"Compute units used {compute_units_used}; maximum allowed is "
+                f"{max_compute_units}."
+            ),
+            weight=2.0,
+            severity="high",
+        ),
+        GuardCondition(
+            name="priority_fee_ceiling",
+            passed=priority_fee_lamports <= max_priority_fee_lamports,
+            detail=(
+                f"Priority fee {priority_fee_lamports} lamports; maximum allowed is "
+                f"{max_priority_fee_lamports}."
+            ),
+            weight=1.5,
+            severity="medium",
+        ),
+        GuardCondition(
+            name="fresh_blockhash",
+            passed=blockhash_age_slots <= max_blockhash_age_slots,
+            detail=(
+                f"Blockhash age is {blockhash_age_slots} slots; maximum allowed is "
+                f"{max_blockhash_age_slots}."
+            ),
+            weight=2.0,
+            severity="high",
+        ),
+    ]
+
+    guard = AgentTxGuard()
+
+    return guard.evaluate(
+        conditions,
+        metadata={
+            "agent_id": payload.get("agent_id"),
+            "chain": payload.get("chain", "solana"),
+            "intent": payload.get("intent", "transaction"),
+            "simulation_ok": simulation_ok,
+            "simulation_error": simulation_error,
+            "wallet_delta_lamports": wallet_delta_lamports,
+            "compute_units_used": compute_units_used,
+            "priority_fee_lamports": priority_fee_lamports,
+            "blockhash_age_slots": blockhash_age_slots,
+        },
+    )
