@@ -1,0 +1,8 @@
+services:
+  agent-txguard:
+    build: .
+    container_name: agent-txguard
+    ports:
+      - "8000:8000"
+    environment:
+      - SOLANA_RPC_URL=https://api.mainnet-beta.solana.com

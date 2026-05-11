@@ -100,3 +100,22 @@ It evaluates Jupiter quote fields including:
 - timeTaken latency
 
 This helps autonomous agents block stale, high-impact, high-slippage, or invalid routes before building a swap transaction.
+
+## Docker
+
+Build and run:
+
+```bash
+docker build -t agent-txguard .
+docker run -p 8000:8000 agent-txguard
+```
+
+Or with Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+## Deploy
+
+This repo includes a `render.yaml` for simple Render deployment.
