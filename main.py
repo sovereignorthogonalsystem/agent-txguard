@@ -31,6 +31,22 @@ def require_api_key(x_api_key: Optional[str] = Header(default=None)) -> None:
 
 
 
+def enforce_usage_quota() -> None:
+    policy = usage_policy_summary()
+
+    if policy.get("over_limit"):
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "error": "Monthly usage quota exceeded.",
+                "plan": policy.get("plan"),
+                "monthly_limit": policy.get("monthly_limit"),
+                "used_this_month": policy.get("used_this_month"),
+                "remaining_this_month": policy.get("remaining_this_month"),
+            },
+        )
+
+
 class RouteVerificationRequest(BaseModel):
     agent_id: str = Field(default="demo-agent")
     chain: str = Field(default="solana")
@@ -130,6 +146,7 @@ def health() -> Dict[str, str]:
 @app.post("/verify/route")
 def verify_route_endpoint(payload: RouteVerificationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
     require_api_key(_)
+    enforce_usage_quota()
     result = verify_route(payload.model_dump())
     response = asdict(result)
     log_usage_event("/verify/route", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")
@@ -139,6 +156,7 @@ def verify_route_endpoint(payload: RouteVerificationRequest, _: None = Header(de
 @app.post("/verify/simulation")
 def verify_simulation_endpoint(payload: SimulationVerificationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
     require_api_key(_)
+    enforce_usage_quota()
     result = verify_simulation(payload.model_dump())
     response = asdict(result)
     log_usage_event("/verify/simulation", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")
@@ -148,6 +166,7 @@ def verify_simulation_endpoint(payload: SimulationVerificationRequest, _: None =
 @app.post("/verify/solana-rpc-simulation")
 def verify_solana_rpc_simulation_endpoint(payload: SolanaRpcSimulationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
     require_api_key(_)
+    enforce_usage_quota()
     try:
         sim = simulate_transaction(
             transaction_base64=payload.transaction_base64,
@@ -188,6 +207,7 @@ def verify_solana_rpc_simulation_endpoint(payload: SolanaRpcSimulationRequest, _
 @app.post("/verify/jupiter-quote")
 def verify_jupiter_quote_endpoint(payload: JupiterQuoteVerificationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
     require_api_key(_)
+    enforce_usage_quota()
     result = verify_jupiter_quote(payload.model_dump())
     response = asdict(result)
     log_usage_event("/verify/jupiter-quote", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")

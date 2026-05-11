@@ -180,3 +180,17 @@ AGENTTXGUARD_PLAN=starter
 Endpoint:
 
 - GET /usage/policy
+
+## Quota Enforcement
+
+Verification endpoints enforce the active monthly usage plan.
+
+When usage exceeds the configured plan limit, protected verification endpoints return:
+
+```text
+429 Too Many Requests
+```
+
+Plan limits are reported at:
+
+- GET /usage/policy
