@@ -6,6 +6,7 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from rpc_simulator import simulate_transaction
+from usage_meter import log_usage_event, usage_summary
 
 from guard import verify_route, verify_simulation, verify_rpc_simulation_result, verify_jupiter_quote
 
@@ -115,6 +116,7 @@ def root() -> Dict[str, str]:
         "simulation_verification": "/verify/simulation",
         "solana_rpc_simulation": "/verify/solana-rpc-simulation",
         "jupiter_quote_verification": "/verify/jupiter-quote",
+        "usage_summary": "/usage/summary",
     }
 
 
@@ -127,14 +129,18 @@ def health() -> Dict[str, str]:
 def verify_route_endpoint(payload: RouteVerificationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
     require_api_key(_)
     result = verify_route(payload.model_dump())
-    return asdict(result)
+    response = asdict(result)
+    log_usage_event("/verify/route", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")
+    return response
 
 
 @app.post("/verify/simulation")
 def verify_simulation_endpoint(payload: SimulationVerificationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
     require_api_key(_)
     result = verify_simulation(payload.model_dump())
-    return asdict(result)
+    response = asdict(result)
+    log_usage_event("/verify/simulation", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")
+    return response
 
 
 @app.post("/verify/solana-rpc-simulation")
@@ -172,11 +178,21 @@ def verify_solana_rpc_simulation_endpoint(payload: SolanaRpcSimulationRequest, _
         }
 
     result = verify_rpc_simulation_result(evaluation_payload)
-    return asdict(result)
+    response = asdict(result)
+    log_usage_event("/verify/solana-rpc-simulation", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")
+    return response
 
 
 @app.post("/verify/jupiter-quote")
 def verify_jupiter_quote_endpoint(payload: JupiterQuoteVerificationRequest, _: None = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
     require_api_key(_)
     result = verify_jupiter_quote(payload.model_dump())
-    return asdict(result)
+    response = asdict(result)
+    log_usage_event("/verify/jupiter-quote", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")
+    return response
+
+
+@app.get("/usage/summary")
+def usage_summary_endpoint(_: Optional[str] = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
+    require_api_key(_)
+    return usage_summary()

@@ -278,3 +278,14 @@ def test_jupiter_quote_blocks_bad_quote():
     assert "slippage_policy" in result.failed_conditions
     assert "price_impact_policy" in result.failed_conditions
     assert "route_plan_present" in result.failed_conditions
+
+
+def test_usage_meter_imports():
+    from usage_meter import init_usage_db, usage_summary
+
+    init_usage_db()
+    summary = usage_summary()
+
+    assert "total_events" in summary
+    assert "by_endpoint" in summary
+    assert "by_decision" in summary

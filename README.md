@@ -138,3 +138,21 @@ curl -X POST "http://127.0.0.1:8000/verify/route" \
 ```
 
 If `AGENTTXGUARD_API_KEY` is unset, the API allows local development without a key.
+
+## Usage Metering
+
+AgentTxGuard includes local SQLite usage metering for hosted API development.
+
+Usage events track:
+
+- endpoint
+- decision
+- safety score
+- agent ID
+- timestamp
+
+Endpoint:
+
+- GET /usage/summary
+
+The SQLite database is ignored by Git and is intended for local/dev usage. For production, replace it with Postgres, Supabase, or another managed database.

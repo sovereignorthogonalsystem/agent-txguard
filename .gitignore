@@ -9,3 +9,6 @@ env/
 .DS_Store
 .vscode/
 .idea/
+
+agenttxguard_usage.sqlite3
+*.sqlite3
