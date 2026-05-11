@@ -289,3 +289,15 @@ def test_usage_meter_imports():
     assert "total_events" in summary
     assert "by_endpoint" in summary
     assert "by_decision" in summary
+
+
+def test_plan_policy_imports():
+    from plans import get_active_plan, usage_policy_summary
+
+    plan = get_active_plan()
+    summary = usage_policy_summary()
+
+    assert plan in ["free", "starter", "pro", "enterprise"]
+    assert "monthly_limit" in summary
+    assert "used_this_month" in summary
+    assert "available_plans" in summary

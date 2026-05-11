@@ -156,3 +156,27 @@ Endpoint:
 - GET /usage/summary
 
 The SQLite database is ignored by Git and is intended for local/dev usage. For production, replace it with Postgres, Supabase, or another managed database.
+
+## Usage Plans
+
+AgentTxGuard includes a simple usage-plan policy layer for hosted API development.
+
+Default plan:
+
+- free: 1,000 calls/month
+
+Other supported plans:
+
+- starter: 10,000 calls/month
+- pro: 100,000 calls/month
+- enterprise: custom/unlimited
+
+Set the active plan with:
+
+```bash
+AGENTTXGUARD_PLAN=starter
+```
+
+Endpoint:
+
+- GET /usage/policy

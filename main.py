@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 from rpc_simulator import simulate_transaction
 from usage_meter import log_usage_event, usage_summary
+from plans import usage_policy_summary
 
 from guard import verify_route, verify_simulation, verify_rpc_simulation_result, verify_jupiter_quote
 
@@ -117,6 +118,7 @@ def root() -> Dict[str, str]:
         "solana_rpc_simulation": "/verify/solana-rpc-simulation",
         "jupiter_quote_verification": "/verify/jupiter-quote",
         "usage_summary": "/usage/summary",
+        "usage_policy": "/usage/policy",
     }
 
 
@@ -196,3 +198,9 @@ def verify_jupiter_quote_endpoint(payload: JupiterQuoteVerificationRequest, _: N
 def usage_summary_endpoint(_: Optional[str] = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
     require_api_key(_)
     return usage_summary()
+
+
+@app.get("/usage/policy")
+def usage_policy_endpoint(_: Optional[str] = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
+    require_api_key(_)
+    return usage_policy_summary()
