@@ -1,0 +1,18 @@
+{
+  "agent_id": "demo-agent-002",
+  "chain": "solana",
+  "intent": "swap",
+  "input_mint": "USDC",
+  "output_mint": "SOL",
+  "nominal_profit_pct": 1.2,
+  "estimated_fees_pct": 0.12,
+  "estimated_slippage_pct": 0.18,
+  "quote_age_seconds": 1.1,
+  "liquidity_score": 0.91,
+  "minimum_profit_pct": 0.25,
+  "max_quote_age_seconds": 3.0,
+  "minimum_liquidity_score": 0.7,
+  "max_slippage_pct": 0.5,
+  "private_key_supplied": false,
+  "seed_phrase_supplied": false
+}
