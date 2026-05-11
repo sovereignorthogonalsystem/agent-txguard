@@ -321,3 +321,41 @@ def test_usage_meter_request_id_supports_summary():
 
     assert "latest" in summary
     assert any(item.get("request_id") == "test-request-id" for item in summary["latest"])
+
+
+def test_policy_profiles_imports():
+    from policy_profiles import get_policy_profile, list_policy_profiles
+
+    profiles = list_policy_profiles()
+    conservative = get_policy_profile("conservative")
+    unknown = get_policy_profile("does-not-exist")
+
+    assert "balanced" in profiles
+    assert conservative["profile"] == "conservative"
+    assert unknown["profile"] == "balanced"
+
+
+def test_conservative_policy_blocks_looser_route():
+    from guard import verify_route
+
+    payload = {
+        "agent_id": "policy-test",
+        "chain": "solana",
+        "policy_profile": "conservative",
+        "intent": "swap",
+        "nominal_profit_pct": 0.40,
+        "estimated_fees_pct": 0.05,
+        "estimated_slippage_pct": 0.20,
+        "quote_age_seconds": 2.5,
+        "liquidity_score": 0.75,
+        "private_key_supplied": False,
+        "seed_phrase_supplied": False,
+    }
+
+    result = verify_route(payload)
+
+    assert result.decision == "BLOCK"
+    assert result.metadata["policy_profile"] == "conservative"
+    assert "minimum_profit_buffer" in result.failed_conditions
+    assert "fresh_quote" in result.failed_conditions
+    assert "liquidity_confidence" in result.failed_conditions

@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 from rpc_simulator import simulate_transaction
 from usage_meter import log_usage_event, usage_summary
 from plans import usage_policy_summary
+from policy_profiles import list_policy_profiles
 
 from guard import verify_route, verify_simulation, verify_rpc_simulation_result, verify_jupiter_quote
 
@@ -63,6 +64,7 @@ def attach_request_id(response: Dict[str, Any], endpoint: str) -> Dict[str, Any]
 class RouteVerificationRequest(BaseModel):
     agent_id: str = Field(default="demo-agent")
     chain: str = Field(default="solana")
+    policy_profile: str = Field(default="balanced")
     intent: str = Field(default="swap")
 
     input_mint: Optional[str] = None
@@ -86,6 +88,7 @@ class RouteVerificationRequest(BaseModel):
 class SimulationVerificationRequest(BaseModel):
     agent_id: str = Field(default="demo-agent")
     chain: str = Field(default="solana")
+    policy_profile: str = Field(default="balanced")
     intent: str = Field(default="transaction")
 
     simulation_ok: bool = False
@@ -109,6 +112,7 @@ class SimulationVerificationRequest(BaseModel):
 class SolanaRpcSimulationRequest(BaseModel):
     agent_id: str = Field(default="demo-agent")
     chain: str = Field(default="solana")
+    policy_profile: str = Field(default="balanced")
 
     transaction_base64: str
     rpc_url: str = Field(default="https://api.mainnet-beta.solana.com")
@@ -124,6 +128,7 @@ class SolanaRpcSimulationRequest(BaseModel):
 class JupiterQuoteVerificationRequest(BaseModel):
     agent_id: str = Field(default="demo-agent")
     chain: str = Field(default="solana")
+    policy_profile: str = Field(default="balanced")
 
     quote: Dict[str, Any]
 
@@ -148,6 +153,7 @@ def root() -> Dict[str, str]:
         "jupiter_quote_verification": "/verify/jupiter-quote",
         "usage_summary": "/usage/summary",
         "usage_policy": "/usage/policy",
+        "policies": "/policies",
     }
 
 
@@ -237,3 +243,11 @@ def usage_summary_endpoint(_: Optional[str] = Header(default=None, alias="X-API-
 def usage_policy_endpoint(_: Optional[str] = Header(default=None, alias="X-API-Key")) -> Dict[str, Any]:
     require_api_key(_)
     return usage_policy_summary()
+
+
+@app.get("/policies")
+def policies_endpoint() -> Dict[str, Any]:
+    return {
+        "default": "balanced",
+        "profiles": list_policy_profiles(),
+    }

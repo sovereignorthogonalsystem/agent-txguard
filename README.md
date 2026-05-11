@@ -203,3 +203,32 @@ Every verification response includes:
 - endpoint
 
 Usage logs also store request IDs, making it easier to trace why a route or transaction was passed, blocked, or sent to review.
+
+## Risk Policy Profiles
+
+AgentTxGuard supports configurable policy profiles:
+
+- conservative
+- balanced
+- aggressive
+
+Policy profiles tune thresholds for:
+
+- minimum profit
+- quote freshness
+- liquidity confidence
+- slippage
+- price impact
+- slot freshness
+- compute units
+- fees
+
+Endpoint:
+
+- GET /policies
+
+Example request field:
+
+```json
+{ "policy_profile": "conservative" }
+```

@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
+from policy_profiles import get_policy_profile
+
 
 @dataclass
 class GuardCondition:
@@ -91,10 +93,12 @@ def verify_route(payload: Dict[str, Any]) -> GuardResult:
     quote_age_seconds = float(payload.get("quote_age_seconds", 999.0))
     liquidity_score = float(payload.get("liquidity_score", 0.0))
 
-    minimum_profit_pct = float(payload.get("minimum_profit_pct", 0.25))
-    max_quote_age_seconds = float(payload.get("max_quote_age_seconds", 3.0))
-    minimum_liquidity_score = float(payload.get("minimum_liquidity_score", 0.70))
-    max_slippage_pct = float(payload.get("max_slippage_pct", 0.50))
+    policy = get_policy_profile(payload.get("policy_profile"))
+
+    minimum_profit_pct = float(payload.get("minimum_profit_pct", policy["minimum_profit_pct"]))
+    max_quote_age_seconds = float(payload.get("max_quote_age_seconds", policy["max_quote_age_seconds"]))
+    minimum_liquidity_score = float(payload.get("minimum_liquidity_score", policy["minimum_liquidity_score"]))
+    max_slippage_pct = float(payload.get("max_slippage_pct", policy["max_slippage_pct"]))
 
     private_key_supplied = bool(payload.get("private_key_supplied", False))
     seed_phrase_supplied = bool(payload.get("seed_phrase_supplied", False))
@@ -169,6 +173,7 @@ def verify_route(payload: Dict[str, Any]) -> GuardResult:
             "net_profit_pct": round(net_profit_pct, 4),
             "quote_age_seconds": quote_age_seconds,
             "liquidity_score": liquidity_score,
+            "policy_profile": policy["profile"],
         },
     )
 
@@ -194,13 +199,15 @@ def verify_simulation(payload: Dict[str, Any]) -> GuardResult:
 
     wallet_delta_lamports = int(payload.get("wallet_delta_lamports", 0))
     compute_units_used = int(payload.get("compute_units_used", 0))
-    max_compute_units = int(payload.get("max_compute_units", 200000))
+    policy = get_policy_profile(payload.get("policy_profile"))
+
+    max_compute_units = int(payload.get("max_compute_units", policy["max_compute_units"]))
 
     priority_fee_lamports = int(payload.get("priority_fee_lamports", 0))
-    max_priority_fee_lamports = int(payload.get("max_priority_fee_lamports", 10000))
+    max_priority_fee_lamports = int(payload.get("max_priority_fee_lamports", policy["max_fee_lamports"]))
 
     blockhash_age_slots = int(payload.get("blockhash_age_slots", 999999))
-    max_blockhash_age_slots = int(payload.get("max_blockhash_age_slots", 120))
+    max_blockhash_age_slots = int(payload.get("max_blockhash_age_slots", policy["max_slot_lag"]))
 
     private_key_supplied = bool(payload.get("private_key_supplied", False))
     seed_phrase_supplied = bool(payload.get("seed_phrase_supplied", False))
@@ -273,6 +280,7 @@ def verify_simulation(payload: Dict[str, Any]) -> GuardResult:
             "compute_units_used": compute_units_used,
             "priority_fee_lamports": priority_fee_lamports,
             "blockhash_age_slots": blockhash_age_slots,
+            "policy_profile": policy["profile"],
         },
     )
 
@@ -294,8 +302,10 @@ def verify_rpc_simulation_result(payload: Dict[str, Any]) -> GuardResult:
     units_consumed = int(value.get("unitsConsumed") or 0)
     fee_lamports = int(value.get("fee") or 0)
 
-    max_compute_units = int(payload.get("max_compute_units", 200000))
-    max_fee_lamports = int(payload.get("max_fee_lamports", 10000))
+    policy = get_policy_profile(payload.get("policy_profile"))
+
+    max_compute_units = int(payload.get("max_compute_units", policy["max_compute_units"]))
+    max_fee_lamports = int(payload.get("max_fee_lamports", policy["max_fee_lamports"]))
 
     dangerous_log_terms = [
         "failed",
@@ -371,6 +381,7 @@ def verify_rpc_simulation_result(payload: Dict[str, Any]) -> GuardResult:
             "log_count": len(logs),
             "dangerous_logs_found": dangerous_logs_found,
             "slot": payload.get("slot"),
+            "policy_profile": policy["profile"],
         },
     )
 
@@ -406,10 +417,12 @@ def verify_jupiter_quote(payload: Dict[str, Any]) -> GuardResult:
     current_slot = payload.get("current_slot")
     current_slot = int(current_slot) if current_slot is not None else None
 
-    max_slippage_bps = int(payload.get("max_slippage_bps", 50))
-    max_price_impact_pct = float(payload.get("max_price_impact_pct", 0.50))
-    max_time_taken = float(payload.get("max_time_taken", 0.50))
-    max_slot_lag = int(payload.get("max_slot_lag", 150))
+    policy = get_policy_profile(payload.get("policy_profile"))
+
+    max_slippage_bps = int(payload.get("max_slippage_bps", policy["max_slippage_bps"]))
+    max_price_impact_pct = float(payload.get("max_price_impact_pct", policy["max_price_impact_pct"]))
+    max_time_taken = float(payload.get("max_time_taken", policy["max_time_taken"]))
+    max_slot_lag = int(payload.get("max_slot_lag", policy["max_slot_lag"]))
 
     slot_lag = None
     if current_slot is not None and context_slot > 0:
@@ -493,5 +506,6 @@ def verify_jupiter_quote(payload: Dict[str, Any]) -> GuardResult:
             "currentSlot": current_slot,
             "slotLag": slot_lag,
             "timeTaken": time_taken,
+            "policy_profile": policy["profile"],
         },
     )
