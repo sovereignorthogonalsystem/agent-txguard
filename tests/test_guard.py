@@ -359,3 +359,26 @@ def test_conservative_policy_blocks_looser_route():
     assert "minimum_profit_buffer" in result.failed_conditions
     assert "fresh_quote" in result.failed_conditions
     assert "liquidity_confidence" in result.failed_conditions
+
+
+def test_usage_lookup_by_request_id():
+    from usage_meter import log_usage_event, get_usage_event_by_request_id
+
+    result = {
+        "request_id": "lookup-test-request-id",
+        "decision": "BLOCK",
+        "safety_score": 0.25,
+        "metadata": {
+            "agent_id": "lookup-test-agent",
+            "request_id": "lookup-test-request-id",
+            "endpoint": "/test/lookup"
+        }
+    }
+
+    log_usage_event("/test/lookup", result, api_key_label="test")
+    event = get_usage_event_by_request_id("lookup-test-request-id")
+
+    assert event is not None
+    assert event["request_id"] == "lookup-test-request-id"
+    assert event["decision"] == "BLOCK"
+    assert event["agent_id"] == "lookup-test-agent"

@@ -7,7 +7,7 @@ from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 
 from rpc_simulator import simulate_transaction
-from usage_meter import log_usage_event, usage_summary
+from usage_meter import log_usage_event, usage_summary, get_usage_event_by_request_id
 from plans import usage_policy_summary
 from policy_profiles import list_policy_profiles
 
@@ -154,6 +154,7 @@ def root() -> Dict[str, str]:
         "usage_summary": "/usage/summary",
         "usage_policy": "/usage/policy",
         "policies": "/policies",
+        "audit_request_lookup": "/audit/request/{request_id}",
     }
 
 
@@ -251,3 +252,18 @@ def policies_endpoint() -> Dict[str, Any]:
         "default": "balanced",
         "profiles": list_policy_profiles(),
     }
+
+
+@app.get("/audit/request/{request_id}")
+def audit_request_endpoint(
+    request_id: str,
+    _: Optional[str] = Header(default=None, alias="X-API-Key"),
+) -> Dict[str, Any]:
+    require_api_key(_)
+
+    event = get_usage_event_by_request_id(request_id)
+
+    if event is None:
+        raise HTTPException(status_code=404, detail="Request ID not found.")
+
+    return event

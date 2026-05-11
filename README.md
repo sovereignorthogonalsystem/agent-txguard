@@ -232,3 +232,13 @@ Example request field:
 ```json
 { "policy_profile": "conservative" }
 ```
+
+## Request Audit Lookup
+
+AgentTxGuard can look up a stored audit event by request ID.
+
+Endpoint:
+
+- GET /audit/request/{request_id}
+
+This helps clients trace why a route, quote, or transaction simulation was passed, blocked, or sent to review.

@@ -133,3 +133,50 @@ def usage_summary() -> Dict[str, Any]:
             for row in latest_rows
         ],
     }
+
+
+def get_usage_event_by_request_id(request_id: str) -> Dict[str, Any] | None:
+    init_usage_db()
+
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            """
+            SELECT
+                timestamp_utc,
+                request_id,
+                endpoint,
+                api_key_label,
+                decision,
+                safety_score,
+                agent_id,
+                metadata_json
+            FROM usage_events
+            WHERE request_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (request_id,),
+        ).fetchone()
+
+    if row is None:
+        return None
+
+    import json
+
+    metadata = {}
+    if row[7]:
+        try:
+            metadata = json.loads(row[7])
+        except json.JSONDecodeError:
+            metadata = {"raw_metadata": row[7]}
+
+    return {
+        "timestamp_utc": row[0],
+        "request_id": row[1],
+        "endpoint": row[2],
+        "api_key_label": row[3],
+        "decision": row[4],
+        "safety_score": row[5],
+        "agent_id": row[6],
+        "metadata": metadata,
+    }
