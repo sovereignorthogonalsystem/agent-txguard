@@ -194,3 +194,12 @@ When usage exceeds the configured plan limit, protected verification endpoints r
 Plan limits are reported at:
 
 - GET /usage/policy
+
+## Request IDs and Audit Trail
+
+Every verification response includes:
+
+- request_id
+- endpoint
+
+Usage logs also store request IDs, making it easier to trace why a route or transaction was passed, blocked, or sent to review.

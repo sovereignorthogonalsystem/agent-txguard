@@ -16,6 +16,7 @@ def init_usage_db() -> None:
             CREATE TABLE IF NOT EXISTS usage_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 timestamp_utc TEXT NOT NULL,
+                request_id TEXT,
                 endpoint TEXT NOT NULL,
                 api_key_label TEXT,
                 decision TEXT,
@@ -25,6 +26,13 @@ def init_usage_db() -> None:
             )
             """
         )
+        existing_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(usage_events)").fetchall()
+        }
+
+        if "request_id" not in existing_columns:
+            conn.execute("ALTER TABLE usage_events ADD COLUMN request_id TEXT")
+
         conn.commit()
 
 
@@ -37,6 +45,7 @@ def log_usage_event(
 
     metadata = result.get("metadata") or {}
     agent_id = metadata.get("agent_id")
+    request_id = result.get("request_id") or metadata.get("request_id")
     decision = result.get("decision")
     safety_score = result.get("safety_score")
 
@@ -47,6 +56,7 @@ def log_usage_event(
             """
             INSERT INTO usage_events (
                 timestamp_utc,
+                request_id,
                 endpoint,
                 api_key_label,
                 decision,
@@ -54,10 +64,11 @@ def log_usage_event(
                 agent_id,
                 metadata_json
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 datetime.now(timezone.utc).isoformat(),
+                request_id,
                 endpoint,
                 api_key_label,
                 decision,
@@ -95,7 +106,7 @@ def usage_summary() -> Dict[str, Any]:
 
         latest_rows = conn.execute(
             """
-            SELECT timestamp_utc, endpoint, decision, safety_score, agent_id
+            SELECT timestamp_utc, request_id, endpoint, decision, safety_score, agent_id
             FROM usage_events
             ORDER BY id DESC
             LIMIT 10
@@ -113,10 +124,11 @@ def usage_summary() -> Dict[str, Any]:
         "latest": [
             {
                 "timestamp_utc": row[0],
-                "endpoint": row[1],
-                "decision": row[2],
-                "safety_score": row[3],
-                "agent_id": row[4],
+                "request_id": row[1],
+                "endpoint": row[2],
+                "decision": row[3],
+                "safety_score": row[4],
+                "agent_id": row[5],
             }
             for row in latest_rows
         ],

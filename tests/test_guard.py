@@ -301,3 +301,23 @@ def test_plan_policy_imports():
     assert "monthly_limit" in summary
     assert "used_this_month" in summary
     assert "available_plans" in summary
+
+
+def test_usage_meter_request_id_supports_summary():
+    from usage_meter import log_usage_event, usage_summary
+
+    result = {
+        "request_id": "test-request-id",
+        "decision": "PASS",
+        "safety_score": 1.0,
+        "metadata": {
+            "agent_id": "test-agent",
+            "request_id": "test-request-id"
+        }
+    }
+
+    log_usage_event("/test/request-id", result, api_key_label="test")
+    summary = usage_summary()
+
+    assert "latest" in summary
+    assert any(item.get("request_id") == "test-request-id" for item in summary["latest"])

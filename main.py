@@ -1,6 +1,7 @@
 from dataclasses import asdict
 from typing import Any, Dict, Optional
 import os
+from uuid import uuid4
 
 from fastapi import FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
@@ -45,6 +46,18 @@ def enforce_usage_quota() -> None:
                 "remaining_this_month": policy.get("remaining_this_month"),
             },
         )
+
+
+def attach_request_id(response: Dict[str, Any], endpoint: str) -> Dict[str, Any]:
+    request_id = str(uuid4())
+    response["request_id"] = request_id
+    response["endpoint"] = endpoint
+
+    metadata = response.setdefault("metadata", {})
+    metadata["request_id"] = request_id
+    metadata["endpoint"] = endpoint
+
+    return response
 
 
 class RouteVerificationRequest(BaseModel):
@@ -148,7 +161,7 @@ def verify_route_endpoint(payload: RouteVerificationRequest, _: None = Header(de
     require_api_key(_)
     enforce_usage_quota()
     result = verify_route(payload.model_dump())
-    response = asdict(result)
+    response = attach_request_id(asdict(result), "/verify/route")
     log_usage_event("/verify/route", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")
     return response
 
@@ -158,7 +171,7 @@ def verify_simulation_endpoint(payload: SimulationVerificationRequest, _: None =
     require_api_key(_)
     enforce_usage_quota()
     result = verify_simulation(payload.model_dump())
-    response = asdict(result)
+    response = attach_request_id(asdict(result), "/verify/simulation")
     log_usage_event("/verify/simulation", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")
     return response
 
@@ -199,7 +212,7 @@ def verify_solana_rpc_simulation_endpoint(payload: SolanaRpcSimulationRequest, _
         }
 
     result = verify_rpc_simulation_result(evaluation_payload)
-    response = asdict(result)
+    response = attach_request_id(asdict(result), "/verify/solana-rpc-simulation")
     log_usage_event("/verify/solana-rpc-simulation", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")
     return response
 
@@ -209,7 +222,7 @@ def verify_jupiter_quote_endpoint(payload: JupiterQuoteVerificationRequest, _: N
     require_api_key(_)
     enforce_usage_quota()
     result = verify_jupiter_quote(payload.model_dump())
-    response = asdict(result)
+    response = attach_request_id(asdict(result), "/verify/jupiter-quote")
     log_usage_event("/verify/jupiter-quote", response, api_key_label="configured" if os.getenv("AGENTTXGUARD_API_KEY") else "local-dev")
     return response
 
