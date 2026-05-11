@@ -242,3 +242,22 @@ Endpoint:
 - GET /audit/request/{request_id}
 
 This helps clients trace why a route, quote, or transaction simulation was passed, blocked, or sent to review.
+
+## Python Client SDK
+
+AgentTxGuard includes a lightweight Python client:
+
+```python
+from client import AgentTxGuardClient
+
+client = AgentTxGuardClient(base_url="http://127.0.0.1:8000")
+result = client.verify_route({...})
+print(result["decision"])
+```
+
+Run the demo:
+
+```bash
+uvicorn main:app --reload
+python examples/client_demo.py
+```
