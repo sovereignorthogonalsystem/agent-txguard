@@ -275,3 +275,101 @@ def verify_simulation(payload: Dict[str, Any]) -> GuardResult:
             "blockhash_age_slots": blockhash_age_slots,
         },
     )
+
+
+def verify_rpc_simulation_result(payload: Dict[str, Any]) -> GuardResult:
+    """
+    Verify a real Solana RPC simulateTransaction response.
+
+    This function does not call RPC itself.
+    It evaluates the parsed RPC response returned by simulateTransaction.
+    """
+
+    rpc_ok = bool(payload.get("rpc_ok", False))
+    rpc_error = payload.get("rpc_error")
+
+    value = payload.get("value") or {}
+    simulation_error = value.get("err")
+    logs = value.get("logs") or []
+    units_consumed = int(value.get("unitsConsumed") or 0)
+    fee_lamports = int(value.get("fee") or 0)
+
+    max_compute_units = int(payload.get("max_compute_units", 200000))
+    max_fee_lamports = int(payload.get("max_fee_lamports", 10000))
+
+    dangerous_log_terms = [
+        "failed",
+        "error",
+        "insufficient funds",
+        "slippage",
+        "custom program error",
+        "blockhash not found",
+    ]
+
+    logs_joined = " ".join(str(log).lower() for log in logs)
+    dangerous_logs_found = [
+        term for term in dangerous_log_terms if term in logs_joined
+    ]
+
+    conditions = [
+        GuardCondition(
+            name="rpc_call_success",
+            passed=rpc_ok and not rpc_error,
+            detail=f"RPC call failed: {rpc_error}",
+            weight=3.0,
+            severity="critical",
+        ),
+        GuardCondition(
+            name="simulation_success",
+            passed=simulation_error is None,
+            detail=f"Simulation returned error: {simulation_error}",
+            weight=5.0,
+            severity="critical",
+        ),
+        GuardCondition(
+            name="compute_unit_ceiling",
+            passed=units_consumed <= max_compute_units,
+            detail=(
+                f"Simulation used {units_consumed} compute units; "
+                f"maximum allowed is {max_compute_units}."
+            ),
+            weight=2.0,
+            severity="high",
+        ),
+        GuardCondition(
+            name="fee_ceiling",
+            passed=fee_lamports <= max_fee_lamports,
+            detail=(
+                f"Simulation fee is {fee_lamports} lamports; "
+                f"maximum allowed is {max_fee_lamports}."
+            ),
+            weight=1.5,
+            severity="medium",
+        ),
+        GuardCondition(
+            name="no_dangerous_logs",
+            passed=len(dangerous_logs_found) == 0,
+            detail=f"Dangerous log terms found: {dangerous_logs_found}",
+            weight=2.0,
+            severity="high",
+        ),
+    ]
+
+    guard = AgentTxGuard()
+
+    return guard.evaluate(
+        conditions,
+        metadata={
+            "agent_id": payload.get("agent_id"),
+            "chain": "solana",
+            "rpc_url": payload.get("rpc_url"),
+            "rpc_ok": rpc_ok,
+            "rpc_error": rpc_error,
+            "simulation_error": simulation_error,
+            "units_consumed": units_consumed,
+            "fee_lamports": fee_lamports,
+            "log_count": len(logs),
+            "dangerous_logs_found": dangerous_logs_found,
+            "slot": payload.get("slot"),
+        },
+    )

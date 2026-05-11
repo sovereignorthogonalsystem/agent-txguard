@@ -4,7 +4,9 @@ from typing import Any, Dict, Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 
-from guard import verify_route, verify_simulation
+from rpc_simulator import simulate_transaction
+
+from guard import verify_route, verify_simulation, verify_rpc_simulation_result
 
 
 app = FastAPI(
@@ -60,6 +62,21 @@ class SimulationVerificationRequest(BaseModel):
     seed_phrase_supplied: bool = False
 
 
+class SolanaRpcSimulationRequest(BaseModel):
+    agent_id: str = Field(default="demo-agent")
+    chain: str = Field(default="solana")
+
+    transaction_base64: str
+    rpc_url: str = Field(default="https://api.mainnet-beta.solana.com")
+
+    commitment: str = Field(default="confirmed")
+    replace_recent_blockhash: bool = True
+    sig_verify: bool = False
+
+    max_compute_units: int = 200000
+    max_fee_lamports: int = 10000
+
+
 @app.get("/")
 def root() -> Dict[str, str]:
     return {
@@ -69,6 +86,7 @@ def root() -> Dict[str, str]:
         "health": "/health",
         "route_verification": "/verify/route",
         "simulation_verification": "/verify/simulation",
+        "solana_rpc_simulation": "/verify/solana-rpc-simulation",
     }
 
 
@@ -86,4 +104,41 @@ def verify_route_endpoint(payload: RouteVerificationRequest) -> Dict[str, Any]:
 @app.post("/verify/simulation")
 def verify_simulation_endpoint(payload: SimulationVerificationRequest) -> Dict[str, Any]:
     result = verify_simulation(payload.model_dump())
+    return asdict(result)
+
+
+@app.post("/verify/solana-rpc-simulation")
+def verify_solana_rpc_simulation_endpoint(payload: SolanaRpcSimulationRequest) -> Dict[str, Any]:
+    try:
+        sim = simulate_transaction(
+            transaction_base64=payload.transaction_base64,
+            rpc_url=payload.rpc_url,
+            commitment=payload.commitment,
+            replace_recent_blockhash=payload.replace_recent_blockhash,
+            sig_verify=payload.sig_verify,
+        )
+
+        evaluation_payload = {
+            "agent_id": payload.agent_id,
+            "rpc_url": payload.rpc_url,
+            "rpc_ok": True,
+            "rpc_error": None,
+            "slot": sim.get("slot"),
+            "value": sim.get("value"),
+            "max_compute_units": payload.max_compute_units,
+            "max_fee_lamports": payload.max_fee_lamports,
+        }
+
+    except Exception as exc:
+        evaluation_payload = {
+            "agent_id": payload.agent_id,
+            "rpc_url": payload.rpc_url,
+            "rpc_ok": False,
+            "rpc_error": str(exc),
+            "value": {},
+            "max_compute_units": payload.max_compute_units,
+            "max_fee_lamports": payload.max_fee_lamports,
+        }
+
+    result = verify_rpc_simulation_result(evaluation_payload)
     return asdict(result)

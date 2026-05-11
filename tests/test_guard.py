@@ -145,3 +145,70 @@ def test_simulation_passes_clean_transaction():
 
     assert result.decision == "PASS"
     assert result.metadata["wallet_delta_lamports"] == 125000
+
+
+from guard import verify_rpc_simulation_result
+
+
+def test_rpc_simulation_result_blocks_rpc_error():
+    payload = {
+        "agent_id": "rpc-fail",
+        "rpc_url": "https://api.mainnet-beta.solana.com",
+        "rpc_ok": False,
+        "rpc_error": "RPC timeout",
+        "value": {},
+        "max_compute_units": 200000,
+        "max_fee_lamports": 10000,
+    }
+
+    result = verify_rpc_simulation_result(payload)
+
+    assert result.decision == "BLOCK"
+    assert "rpc_call_success" in result.failed_conditions
+
+
+def test_rpc_simulation_result_passes_clean_result():
+    payload = {
+        "agent_id": "rpc-pass",
+        "rpc_url": "https://api.mainnet-beta.solana.com",
+        "rpc_ok": True,
+        "rpc_error": None,
+        "slot": 123,
+        "value": {
+            "err": None,
+            "logs": ["Program 11111111111111111111111111111111 success"],
+            "unitsConsumed": 120000,
+            "fee": 5000
+        },
+        "max_compute_units": 200000,
+        "max_fee_lamports": 10000,
+    }
+
+    result = verify_rpc_simulation_result(payload)
+
+    assert result.decision == "PASS"
+    assert result.metadata["units_consumed"] == 120000
+
+
+def test_rpc_simulation_result_blocks_simulation_error():
+    payload = {
+        "agent_id": "rpc-sim-error",
+        "rpc_url": "https://api.mainnet-beta.solana.com",
+        "rpc_ok": True,
+        "rpc_error": None,
+        "slot": 123,
+        "value": {
+            "err": {"InstructionError": [0, "Custom"]},
+            "logs": ["Program failed: custom program error"],
+            "unitsConsumed": 180000,
+            "fee": 5000
+        },
+        "max_compute_units": 200000,
+        "max_fee_lamports": 10000,
+    }
+
+    result = verify_rpc_simulation_result(payload)
+
+    assert result.decision == "BLOCK"
+    assert "simulation_success" in result.failed_conditions
+    assert "no_dangerous_logs" in result.failed_conditions

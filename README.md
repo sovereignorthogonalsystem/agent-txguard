@@ -66,3 +66,19 @@ Example:
 curl -X POST "http://127.0.0.1:8000/verify/simulation" \
   -H "Content-Type: application/json" \
   -d @examples/simulation_block.json
+
+## Real Solana RPC Simulation
+
+AgentTxGuard includes a Solana RPC simulation endpoint:
+
+- POST /verify/solana-rpc-simulation
+
+It accepts a base64-encoded transaction, calls Solana simulateTransaction, and evaluates:
+
+- RPC call success
+- simulation error
+- compute units consumed
+- fee ceiling
+- suspicious simulation logs
+
+This endpoint does not broadcast transactions and never accepts private keys or seed phrases.

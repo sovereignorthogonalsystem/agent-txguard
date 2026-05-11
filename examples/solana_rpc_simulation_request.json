@@ -1,0 +1,11 @@
+{
+  "agent_id": "demo-agent-rpc",
+  "chain": "solana",
+  "transaction_base64": "PASTE_BASE64_SIGNED_OR_SIMULATABLE_TRANSACTION_HERE",
+  "rpc_url": "https://api.mainnet-beta.solana.com",
+  "commitment": "confirmed",
+  "replace_recent_blockhash": true,
+  "sig_verify": false,
+  "max_compute_units": 200000,
+  "max_fee_lamports": 10000
+}
