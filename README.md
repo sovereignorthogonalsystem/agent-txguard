@@ -261,3 +261,7 @@ Run the demo:
 uvicorn main:app --reload
 python examples/client_demo.py
 ```
+
+## Project Brief
+
+See PROJECT_BRIEF.md for a product overview of AgentTxGuard, including the problem, solution, API endpoints, core features, and target use cases.
